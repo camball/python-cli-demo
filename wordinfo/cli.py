@@ -1,10 +1,12 @@
 import inflect
-import requests
 import random
+import requests
 import time
 
+from alive_progress import alive_it
 from docopt import docopt
-from typing import Iterable, Sequence
+from halo import Halo
+from typing import Collection
 from urllib3 import disable_warnings
 from urllib3.exceptions import InsecureRequestWarning
 
@@ -15,13 +17,13 @@ class NoDefinitionFoundException(requests.RequestException):
     pass
 
 
-def define(words: Iterable[str], language_code: str | None) -> dict[str, str]:
+def define(words: Collection[str], language_code: str | None) -> dict[str, str]:
     definitions: dict[str, str] = dict()
 
     if language_code is None:
         language_code = "en"
 
-    for word in words:
+    for word in alive_it(words):
         resp = requests.get(
             f"https://api.dictionaryapi.dev/api/v2/entries/{language_code}/{word}",
             verify=False,
@@ -45,21 +47,24 @@ def define(words: Iterable[str], language_code: str | None) -> dict[str, str]:
     return definitions
 
 
+@Halo(text="Processing...", spinner="dots5")
 def plural(word: str) -> str:
     inf = inflect.engine()
-    time.sleep(random.random())  # Simulate long processing time...
+    time.sleep(random.random() * 2)  # Simulate long processing time...
     return inf.plural(word)  # type: ignore
 
 
+@Halo(text="Processing...", spinner="dots5")
 def with_indefinite_article(word: str) -> str:
     inf = inflect.engine()
-    time.sleep(random.random())  # Simulate long processing time...
+    time.sleep(random.random() * 2)  # Simulate long processing time...
     return inf.a(word)  # type: ignore
 
 
+@Halo(text="Processing...", spinner="dots5")
 def ordinal(number: str | int) -> str:
     inf = inflect.engine()
-    time.sleep(random.random())  # Simulate long processing time...
+    time.sleep(random.random() * 2)  # Simulate long processing time...
     return inf.ordinal(number)  # type: ignore
 
 
