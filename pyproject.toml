@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "wordinfo"
+version = "0.1.0"
+description = "Demo project using various CLI UI components for Python"
+authors = ["camball <67163069+camball@users.noreply.github.com>"]
+readme = "README.md"
+packages = [{ include = "wordinfo" }]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+inflect = "^7.4.0"
+parallelbar = "^2.4"
+requests = "^2.32.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+wordinfo = "wordinfo.cli:main"
