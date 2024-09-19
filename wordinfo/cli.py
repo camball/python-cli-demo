@@ -3,8 +3,8 @@ import requests
 import random
 import time
 
-from sys import argv
-from typing import Sequence
+from docopt import docopt
+from typing import Iterable, Sequence
 from urllib3 import disable_warnings
 from urllib3.exceptions import InsecureRequestWarning
 
@@ -15,7 +15,7 @@ class NoDefinitionFoundException(requests.RequestException):
     pass
 
 
-def define(words: list[str], language_code: str | None) -> dict[str, str]:
+def define(words: Iterable[str], language_code: str | None) -> dict[str, str]:
     definitions: dict[str, str] = dict()
 
     if language_code is None:
@@ -63,121 +63,59 @@ def ordinal(number: str | int) -> str:
     return inf.ordinal(number)  # type: ignore
 
 
-def parse_arguments(
-    args: Sequence[str],
-) -> tuple[list[str], dict[str, str | bool]]:
-    """Parse arguments.
+USAGE = """Word Information
 
-    Keyword arguments must follow positional arguments.
+Usage:
+    wordinfo define <words>... [--language <language_code>]
+    wordinfo plural <word>
+    wordinfo indefinite <noun>
+    wordinfo ordinal <number>
+    wordinfo (-h | --help)
 
-    Flag arguments are treated as keyword arguments, with a value of `True`.
-
-    Keyword arguments and flags are a dictionary, i.e., duplicate kwargs are silently ignored.
-
-    ### Parameters
-    - :param `Sequence[str]` `args`: List of arguments.
-
-    ### Returns
-    :return: Tuple containing positional arguments and keyword arguments, respectively.
-    :rtype: `tuple[list[str], dict[str, str | bool]]`
-    """
-    keyword_args: dict[str, str | bool] = dict()
-    positional_args: list[str] = list()
-
-    is_processing_keyword_args = False
-    last_keyword_arg = ""
-
-    for arg in args[1:]:
-        # Consume keyword args
-        if arg.startswith("-"):
-            is_processing_keyword_args = True
-
-            if arg.startswith("--"):
-                keyword_args[arg] = ""
-                last_keyword_arg = arg
-            else:  # arg starts with only '-'
-                keyword_args[arg] = True
-
-            continue
-
-        # Consume arguments passed to keyword args
-        if is_processing_keyword_args:
-            if (val := keyword_args[last_keyword_arg]) and isinstance(val, str):
-                val += f" {arg}"
-            else:
-                val = arg
-
-            keyword_args[last_keyword_arg] = val
-            continue
-
-        # Consume positional args
-        positional_args.append(arg)
-
-    return positional_args, keyword_args
-
-
-def usage():
-    print(
-        """usage:
-  wordinfo define <words>... [--language <language_code>]
-  wordinfo plural <word>
-  wordinfo indefinite <noun>
-  wordinfo ordinal <number>
+Options:
+    -h --help                    Show this help message.
+    --language <language_code>   Specify a language code.
 """
-    )
 
 
 def main():
-    positional_args, keyword_args = parse_arguments(argv)
-
-    """
-    >>> print(f"{positional_args = }")
-    >>> print(f"{keyword_args = }")
-
-    $ poetry run wordinfo positional1 positional2 --fullname cameron ball --username camball --password password
-
-    positional_args = ['positional1', 'positional2']
-    keyword_args = {'--fullname': 'cameron ball', '--username': 'camball', '--password': 'password'}
-    """
+    arguments = docopt(USAGE)
 
     disable_warnings(InsecureRequestWarning)
     random.seed(time.time())
 
-    # Match on the subcommand, e.g., `$ wordinfo define dog` runs the `define` subcommand
-    match positional_args[0]:
-        case "define":
-            if not positional_args[1:]:
-                print("At least one word is required to define.")
-                return
+    if arguments.get("define"):
+        words = arguments.get("<words>")
+        if not words:
+            print("At least one word is required to define.")
+            return
 
-            language_code = keyword_args.get("--language")
-            if isinstance(language_code, bool) or (
-                "--language" in keyword_args.keys() and not language_code
-            ):
-                print("`--language` requires a language code to be specified.")
-                return
+        language_code = arguments.get("--language")
+        if arguments.get("--language") and not language_code:
+            print("`--language` requires a language code to be specified.")
+            return
 
-            definitions = define(positional_args[1:], language_code)
+        definitions = define(words, language_code)
 
-            formatted_definitions = "\n\n".join(
-                [f"{word}: {definition}" for word, definition in definitions.items()]
-            )
-            print(formatted_definitions)
+        formatted_definitions = "\n\n".join(
+            [f"{word}: {definition}" for word, definition in definitions.items()]
+        )
+        print(formatted_definitions)
 
-        case "plural":
-            try:
-                print(plural(positional_args[1]))
-            except IndexError:
-                usage()
-        case "indefinite":
-            try:
-                print(with_indefinite_article(positional_args[1]))
-            except IndexError:
-                usage()
-        case "ordinal":
-            try:
-                print(ordinal(positional_args[1]))
-            except IndexError:
-                usage()
-        case _:
-            usage()
+    elif arguments.get("plural"):
+        try:
+            print(plural(arguments.get("<word>")))  # type: ignore
+        except IndexError:
+            print(USAGE)
+    elif arguments.get("indefinite"):
+        try:
+            print(with_indefinite_article(arguments.get("<noun>")))  # type: ignore
+        except IndexError:
+            print(USAGE)
+    elif arguments.get("ordinal"):
+        try:
+            print(ordinal(arguments.get("<number>")))  # type: ignore
+        except IndexError:
+            print(USAGE)
+    else:
+        print(USAGE)

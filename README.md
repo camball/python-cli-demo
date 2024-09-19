@@ -23,6 +23,7 @@ wordinfo define <words>... [--language <language_code>]
 wordinfo plural <word>
 wordinfo indefinite <noun>
 wordinfo ordinal <number>
+wordinfo (-h | --help)
 ```
 
 ## Notes
